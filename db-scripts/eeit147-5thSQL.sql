@@ -111,47 +111,47 @@ CREATE TABLE shipment(
 
 
 -- 客服對話紀錄表
-CREATE TABLE ChatSessions (
-    ChatID INT IDENTITY(1,1) PRIMARY KEY,
-    UserID INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
-    SupportID INT NULL FOREIGN KEY REFERENCES users(user_id),
+CREATE TABLE chat_sessions (
+    chat_id INT IDENTITY(1,1) PRIMARY KEY,
+    chat_user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
+    support_id INT NULL FOREIGN KEY REFERENCES users(user_id),
     Status NVARCHAR(20) CHECK (Status IN ('Open', 'Closed')) DEFAULT 'Open',
-    CreatedAt DATETIME DEFAULT GETDATE(),
-    UpdatedAt DATETIME DEFAULT GETDATE(),
-    ClosedAt DATETIME NULL
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE(),
+    closed_at DATETIME NULL
 );
 GO
 
 -- 訊息表
-CREATE TABLE Messages (
-    MessageID INT IDENTITY(1,1) PRIMARY KEY,
-    ChatID INT NOT NULL FOREIGN KEY REFERENCES ChatSessions(ChatID),
-    SenderID INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
-    MessageText NVARCHAR(MAX) NOT NULL,
-    IsAIResponse BIT DEFAULT 0, -- 0: 人類, 1: AI 回覆
-    SentAt DATETIME DEFAULT GETDATE(),
-    UpdatedAt DATETIME DEFAULT GETDATE()
+CREATE TABLE messages (
+    message_id INT IDENTITY(1,1) PRIMARY KEY,
+    chat_id INT NOT NULL FOREIGN KEY REFERENCES chat_sessions(chat_id),
+    sender_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id),
+    message_text NVARCHAR(MAX) NOT NULL,
+    is_ai_response BIT DEFAULT 0, -- 0: 人類, 1: AI 回覆
+    sent_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE()
 );
 GO
 
 -- 常見問題表
-CREATE TABLE FAQs (
-    FAQID INT IDENTITY(1,1) PRIMARY KEY,
-    Question NVARCHAR(500) NOT NULL,
-    Answer NVARCHAR(1000) NOT NULL,
-    CreatedAt DATETIME DEFAULT GETDATE(),
-    UpdatedAt DATETIME DEFAULT GETDATE()
+CREATE TABLE faqs (
+    faq_id INT IDENTITY(1,1) PRIMARY KEY,
+    question NVARCHAR(500) NOT NULL,
+    answer NVARCHAR(1000) NOT NULL,
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE()
 );
 GO
 
 -- 客戶回饋表
-CREATE TABLE Feedback (
-    FeedbackID INT IDENTITY(1,1) PRIMARY KEY,
-    UserID INT NOT NULL FOREIGN KEY REFERENCES users(user_id) ON DELETE CASCADE,
-    Rating INT CHECK (Rating BETWEEN 1 AND 5) NOT NULL,
-    Comment NVARCHAR(1000),
-    CreatedAt DATETIME DEFAULT GETDATE(),
-    UpdatedAt DATETIME DEFAULT GETDATE()
+CREATE TABLE feedback (
+    feedback_id INT IDENTITY(1,1) PRIMARY KEY,
+    feedback_user_id INT NOT NULL FOREIGN KEY REFERENCES users(user_id) ON DELETE CASCADE,
+    rating INT CHECK (Rating BETWEEN 1 AND 5) NOT NULL,
+    comment NVARCHAR(1000),
+    created_at DATETIME DEFAULT GETDATE(),
+    updated_at DATETIME DEFAULT GETDATE()
 );
 GO
 
@@ -186,7 +186,7 @@ GO
 
 CREATE TABLE [dbo].[shops] (
     [shop_id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [user_id] INT NOT NULL FOREIGN KEY ([user_id]) REFERENCES [dbo].[users]([user_id]),
+    [shops_user_id] INT NOT NULL FOREIGN KEY ([shops_user_id]) REFERENCES [dbo].[users]([user_id]),
     [store_name] NVARCHAR(1000) NOT NULL,
     [store_description] NVARCHAR(1000),
     [created_at] DATETIME NOT NULL DEFAULT GETDATE(),
@@ -198,14 +198,14 @@ CREATE TABLE [dbo].[shops] (
 
 CREATE TABLE [dbo].[reviews] (
     [review_id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,  -- 主鍵，自動遞增
-    [product_id] INT NOT NULL,  -- 外鍵，參考 products 表格的 product_id
-    [user_id] INT NOT NULL,  -- 外鍵，參考 users 表格的 member_id
+    [reviews_product_id] INT NOT NULL,  -- 外鍵，參考 products 表格的 product_id
+    [reviews_user_id] INT NOT NULL,  -- 外鍵，參考 users 表格的 member_id
     [rating] INT CHECK (rating BETWEEN 1 AND 5) NOT NULL,  -- 評分，介於 1 到 5 之間
     [comment] NVARCHAR(1000),  -- 評論內容
     [photo] VARBINARY(MAX),  -- 圖片，儲存為二進制數據
     [updated_at] DATETIME NOT NULL DEFAULT GETDATE(),  -- 更新時間，預設為當前時間
-    CONSTRAINT FK_Product FOREIGN KEY ([product_id]) REFERENCES [dbo].[products]([product_id]),  -- 外鍵約束：product_id 參考 products 表格
-    CONSTRAINT FK_User FOREIGN KEY ([user_id]) REFERENCES [dbo].[users]([user_id])  -- 外鍵約束：user_id 參考 users 表格
+    CONSTRAINT FK_Product FOREIGN KEY ([reviews_product_id]) REFERENCES [dbo].[products]([product_id]),  -- 外鍵約束：product_id 參考 products 表格
+    CONSTRAINT FK_User FOREIGN KEY ([reviews_user_id]) REFERENCES [dbo].[users]([user_id])  -- 外鍵約束：user_id 參考 users 表格
 );
 
 
@@ -285,7 +285,7 @@ INSERT INTO shipment (order_id, tracking_number, carrier, estimated_delivery, de
 (3, 'TRACK112233', 'FedEx', '2025-03-12 09:00:00', 'Delivered');
 
 
-INSERT INTO [dbo].[reviews] ([product_id], [user_id], [rating], [comment], [updated_at]) 
+INSERT INTO [dbo].[reviews] ([reviews_product_id], [reviews_user_id], [rating], [comment], [updated_at]) 
 VALUES 
     (1, 1, 5, N'非常好用，效果出乎意料。很滿意這次的購物體驗，值得推薦。', DATEADD(MINUTE, -10, GETDATE())),
     (2, 2, 4, N'商品質量還不錯，但物流稍慢了一點。', DATEADD(MINUTE, -10, GETDATE())),
@@ -300,7 +300,7 @@ VALUES
 
 
 INSERT INTO [dbo].[shops] 
-([user_id], [store_name], [store_description], [created_at], [seller_status], [shop_status])
+([shops_user_id], [store_name], [store_description], [created_at], [seller_status], [shop_status])
 VALUES
 (1, '美味小吃店', '提供各式小吃，口味獨特，絕對讓你回味無窮。', GETDATE(), 1, 1),
 (2, 'Fashion World', '最流行的時尚服飾店，讓你成為街頭最亮眼的存在。', GETDATE(), 1, 1),
@@ -320,7 +320,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[Best_Sell_Rankings](
+CREATE TABLE [dbo].[best_sell_rankings](
 	[best_sell_rankings_id] [int] IDENTITY(1,1) NOT NULL,
 	[product_id] [int] NOT NULL,
 	[number_count] [int] NOT NULL,
@@ -331,12 +331,12 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Best_Sell_Tracking]    Script Date: 2025/3/4 下午 09:58:47 ******/
+/****** Object:  Table [dbo].[best_sell_tracking]    Script Date: 2025/3/4 下午 09:58:47 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[Best_Sell_Tracking](
+CREATE TABLE [dbo].[best_sell_tracking](
 	[best_sell_tracking_id] [int] IDENTITY(1,1) NOT NULL,
 	[product_id] [int] NOT NULL,
 	[love_count] [int] NOT NULL,
@@ -364,12 +364,12 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Coupon]    Script Date: 2025/3/4 下午 09:58:47 ******/
+/****** Object:  Table [dbo].[coupon]    Script Date: 2025/3/4 下午 09:58:47 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[Coupon](
+CREATE TABLE [dbo].[coupon](
 	[coupon_id] [int] IDENTITY(1,1) NOT NULL,
 	[users_id] [int] NOT NULL,
 	[coupon_discount] [int] NOT NULL,
@@ -401,7 +401,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[Limited_time_sale](
+CREATE TABLE [dbo].[limited_time_sale](
 	[limited_time_sale_id] [int] IDENTITY(1,1) NOT NULL,
 	[limited_time_start] [datetime] NOT NULL,
 	[limited_time_end] [datetime] NOT NULL,
@@ -412,27 +412,27 @@ PRIMARY KEY CLUSTERED
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-SET IDENTITY_INSERT [dbo].[Best_Sell_Rankings] ON 
+SET IDENTITY_INSERT [dbo].[best_sell_rankings] ON 
 
-INSERT [dbo].[Best_Sell_Rankings] ([best_sell_rankings_id], [product_id], [number_count], [bsr_discount]) VALUES (1, 23, 14, 250)
-INSERT [dbo].[Best_Sell_Rankings] ([best_sell_rankings_id], [product_id], [number_count], [bsr_discount]) VALUES (2, 11, 90, 199)
-SET IDENTITY_INSERT [dbo].[Best_Sell_Rankings] OFF
+INSERT [dbo].[best_sell_rankings] ([best_sell_rankings_id], [product_id], [number_count], [bsr_discount]) VALUES (1, 23, 14, 250)
+INSERT [dbo].[best_sell_rankings] ([best_sell_rankings_id], [product_id], [number_count], [bsr_discount]) VALUES (2, 11, 90, 199)
+SET IDENTITY_INSERT [dbo].[best_sell_rankings] OFF
 GO
-SET IDENTITY_INSERT [dbo].[Best_Sell_Tracking] ON 
+SET IDENTITY_INSERT [dbo].[best_sell_tracking] ON 
 
-INSERT [dbo].[Best_Sell_Tracking] ([best_sell_tracking_id], [product_id], [love_count]) VALUES (1, 11, 1000)
-SET IDENTITY_INSERT [dbo].[Best_Sell_Tracking] OFF
+INSERT [dbo].[best_sell_tracking] ([best_sell_tracking_id], [product_id], [love_count]) VALUES (1, 11, 1000)
+SET IDENTITY_INSERT [dbo].[best_sell_tracking] OFF
 GO
 SET IDENTITY_INSERT [dbo].[buy_one_get_one] ON 
 
 INSERT [dbo].[buy_one_get_one] ([bogo_id], [order_id], [users_id], [product_id], [quantity], [bogo_condition]) VALUES (1, 21, 1, 11, 20, 0)
 SET IDENTITY_INSERT [dbo].[buy_one_get_one] OFF
 GO
-SET IDENTITY_INSERT [dbo].[Coupon] ON 
+SET IDENTITY_INSERT [dbo].[coupon] ON 
 
 INSERT [dbo].[Coupon] ([coupon_id], [users_id], [coupon_discount], [coupon_date_timeout]) VALUES (2, 101, 60, CAST(N'2025-03-31T23:59:59.000' AS DateTime))
 INSERT [dbo].[Coupon] ([coupon_id], [users_id], [coupon_discount], [coupon_date_timeout]) VALUES (3, 102, 60, CAST(N'2025-04-30T23:59:59.000' AS DateTime))
-SET IDENTITY_INSERT [dbo].[Coupon] OFF
+SET IDENTITY_INSERT [dbo].[coupon] OFF
 GO
 SET IDENTITY_INSERT [dbo].[discount] ON 
 
@@ -440,9 +440,9 @@ INSERT [dbo].[discount] ([discount_id], [product_id], [date_time], [discount_per
 INSERT [dbo].[discount] ([discount_id], [product_id], [date_time], [discount_percent]) VALUES (2, 102, CAST(N'2025-04-01T08:30:00.000' AS DateTime), 80)
 SET IDENTITY_INSERT [dbo].[discount] OFF
 GO
-SET IDENTITY_INSERT [dbo].[Limited_time_sale] ON 
+SET IDENTITY_INSERT [dbo].[limited_time_sale] ON 
 
-INSERT [dbo].[Limited_time_sale] ([limited_time_sale_id], [limited_time_start], [limited_time_end], [limited_time_list_id]) VALUES (1, CAST(N'2025-03-01T10:00:00.000' AS DateTime), CAST(N'2025-04-01T08:30:00.000' AS DateTime), 1)
-INSERT [dbo].[Limited_time_sale] ([limited_time_sale_id], [limited_time_start], [limited_time_end], [limited_time_list_id]) VALUES (2, CAST(N'2025-03-01T10:00:00.000' AS DateTime), CAST(N'2025-04-15T08:30:00.000' AS DateTime), 2)
-SET IDENTITY_INSERT [dbo].[Limited_time_sale] OFF
+INSERT [dbo].[limited_time_sale] ([limited_time_sale_id], [limited_time_start], [limited_time_end], [limited_time_list_id]) VALUES (1, CAST(N'2025-03-01T10:00:00.000' AS DateTime), CAST(N'2025-04-01T08:30:00.000' AS DateTime), 1)
+INSERT [dbo].[limited_time_sale] ([limited_time_sale_id], [limited_time_start], [limited_time_end], [limited_time_list_id]) VALUES (2, CAST(N'2025-03-01T10:00:00.000' AS DateTime), CAST(N'2025-04-15T08:30:00.000' AS DateTime), 2)
+SET IDENTITY_INSERT [dbo].[limited_time_sale] OFF
 GO
