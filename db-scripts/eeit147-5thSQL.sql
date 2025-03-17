@@ -184,17 +184,6 @@ PRIMARY KEY CLUSTERED
 ) ON [PRIMARY]
 GO
 
-CREATE TABLE [dbo].[shops] (
-    [shop_id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-    [shops_user_id] INT NOT NULL FOREIGN KEY ([shops_user_id]) REFERENCES [dbo].[users]([user_id]),
-    [store_name] NVARCHAR(1000) NOT NULL,
-    [store_description] NVARCHAR(1000),
-    [created_at] DATETIME NOT NULL DEFAULT GETDATE(),
-    [seller_photo] VARBINARY(MAX),
-    [seller_status] TINYINT NOT NULL,
-    [shop_status] BIT NOT NULL
-);
-
 
 CREATE TABLE [dbo].[reviews] (
     [review_id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,  -- 主鍵，自動遞增
@@ -297,21 +286,6 @@ VALUES
     (3, 4, 1, N'商品質量差，完全不符合預期。', DATEADD(MINUTE, -10, GETDATE())),
     (4, 5, 4, N'商品不錯，符合描述，但還是希望能再提升質量。', DATEADD(MINUTE, -10, GETDATE())),
     (5, 1, 5, N'這款產品完全符合我的需求，性價比超高，會再次購買。', DATEADD(MINUTE, -10, GETDATE()));
-
-
-INSERT INTO [dbo].[shops] 
-([shops_user_id], [store_name], [store_description], [created_at], [seller_status], [shop_status])
-VALUES
-(1, '美味小吃店', '提供各式小吃，口味獨特，絕對讓你回味無窮。', GETDATE(), 1, 1),
-(2, 'Fashion World', '最流行的時尚服飾店，讓你成為街頭最亮眼的存在。', GETDATE(), 1, 1),
-(3, '舒適家居館', '舒適的居家生活用品，讓你在家也能享受度假感覺。', GETDATE(), 1, 1),
-(4, '綠意花園', '提供新鮮的植物和花卉，裝點你的家，讓生活更有生氣。', GETDATE(), 1, 1),
-(5, 'Tech Gadget Store', '最新科技產品，讓你領先潮流。', GETDATE(), 1, 1),
-(1, '手工藝品專賣店', '每一個手工藝品都充滿藝術氣息，為您的家增添獨特風格。', GETDATE(), 1, 1),
-(2, '運動用品專賣店', '提供各式運動用品，讓你輕鬆開啟運動生活。', GETDATE(), 1, 1),
-(3, '美妝與保養', '專業的美容與保養產品，讓你的肌膚永遠年輕光滑。', GETDATE(), 1, 1),
-(4, '電玩世界', '遊戲愛好者的天堂，讓你享受無限的遊戲樂趣。', GETDATE(), 1, 1),
-(5, '寵物用品店', '為你的寵物挑選最合適的用品，讓牠們的生活更幸福。', GETDATE(), 1, 1);
 
 
 
