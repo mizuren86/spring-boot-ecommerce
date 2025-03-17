@@ -46,7 +46,6 @@ CREATE TABLE products(
 );
 
 
-
 CREATE TABLE shopping_cart(
     cart_id INT PRIMARY KEY IDENTITY(1, 1),
     user_id INT NOT NULL UNIQUE,
@@ -156,8 +155,58 @@ CREATE TABLE Feedback (
 );
 GO
 
+CREATE TABLE [dbo].[user_vip](
+	[end_date] [date] NULL,
+	[is_vip] [bit] NOT NULL,
+	[member_id] [int] NULL,
+	[start_date] [date] NOT NULL,
+	[vip_id] [int] IDENTITY(1,1) NOT NULL,
+	[vip_level] [int] NULL,
+	[vip_photo] [varchar](255) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[vip_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+CREATE TABLE [dbo].[user_vip_history](
+	[end_date] [date] NOT NULL,
+	[history_id] [int] IDENTITY(1,1) NOT NULL,
+	[member_id] [int] NULL,
+	[start_date] [date] NOT NULL,
+	[vip_level] [int] NULL,
+	[vip_photo] [varchar](255) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[history_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+CREATE TABLE [dbo].[shops] (
+    [shop_id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+    [user_id] INT NOT NULL FOREIGN KEY ([user_id]) REFERENCES [dbo].[users]([user_id]),
+    [store_name] NVARCHAR(1000) NOT NULL,
+    [store_description] NVARCHAR(1000),
+    [created_at] DATETIME NOT NULL DEFAULT GETDATE(),
+    [seller_photo] VARBINARY(MAX),
+    [seller_status] TINYINT NOT NULL,
+    [shop_status] BIT NOT NULL
+);
 
 
+CREATE TABLE [dbo].[reviews] (
+    [review_id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,  -- 主鍵，自動遞增
+    [product_id] INT NOT NULL,  -- 外鍵，參考 products 表格的 product_id
+    [user_id] INT NOT NULL,  -- 外鍵，參考 users 表格的 member_id
+    [rating] INT CHECK (rating BETWEEN 1 AND 5) NOT NULL,  -- 評分，介於 1 到 5 之間
+    [comment] NVARCHAR(1000),  -- 評論內容
+    [photo] VARBINARY(MAX),  -- 圖片，儲存為二進制數據
+    [updated_at] DATETIME NOT NULL DEFAULT GETDATE(),  -- 更新時間，預設為當前時間
+    CONSTRAINT FK_Product FOREIGN KEY ([product_id]) REFERENCES [dbo].[products]([product_id]),  -- 外鍵約束：product_id 參考 products 表格
+    CONSTRAINT FK_User FOREIGN KEY ([user_id]) REFERENCES [dbo].[users]([user_id])  -- 外鍵約束：user_id 參考 users 表格
+);
 
 
 -- 插入假資料到 users 表
@@ -229,9 +278,171 @@ INSERT INTO payments (order_id, user_id, payment_date, amount, payment_method, p
 (5, 5, '2025-03-10 21:00:00', 1299.00, 'Credit Card', 'Failed', NULL);
 
 
-
 -- 插入假資料到 shipment 表
 INSERT INTO shipment (order_id, tracking_number, carrier, estimated_delivery, delivery_status) VALUES
 (1, 'TRACK123456', 'UPS', '2025-03-15 10:00:00', 'InTransit'),
 (2, 'TRACK987654', 'DHL', '2025-03-18 14:00:00', 'Pending'),
 (3, 'TRACK112233', 'FedEx', '2025-03-12 09:00:00', 'Delivered');
+
+
+INSERT INTO [dbo].[reviews] ([product_id], [user_id], [rating], [comment], [updated_at]) 
+VALUES 
+    (1, 1, 5, N'非常好用，效果出乎意料。很滿意這次的購物體驗，值得推薦。', DATEADD(MINUTE, -10, GETDATE())),
+    (2, 2, 4, N'商品質量還不錯，但物流稍慢了一點。', DATEADD(MINUTE, -10, GETDATE())),
+    (3, 3, 3, N'普通商品，沒有太大驚喜。性價比一般。', DATEADD(MINUTE, -10, GETDATE())),
+    (4, 4, 2, N'商品與描述不符，質量不好，不太滿意。', DATEADD(MINUTE, -10, GETDATE())),
+    (5, 5, 5, N'超級喜歡這款產品，物超所值，非常實用。', DATEADD(MINUTE, -10, GETDATE())),
+    (1, 2, 4, N'質量很好，使用起來很方便，適合日常使用。', DATEADD(MINUTE, -10, GETDATE())),
+    (2, 3, 3, N'商品還可以，沒有很特別，適合基本需求。', DATEADD(MINUTE, -10, GETDATE())),
+    (3, 4, 1, N'商品質量差，完全不符合預期。', DATEADD(MINUTE, -10, GETDATE())),
+    (4, 5, 4, N'商品不錯，符合描述，但還是希望能再提升質量。', DATEADD(MINUTE, -10, GETDATE())),
+    (5, 1, 5, N'這款產品完全符合我的需求，性價比超高，會再次購買。', DATEADD(MINUTE, -10, GETDATE()));
+
+
+INSERT INTO [dbo].[shops] 
+([user_id], [store_name], [store_description], [created_at], [seller_status], [shop_status])
+VALUES
+(1, '美味小吃店', '提供各式小吃，口味獨特，絕對讓你回味無窮。', GETDATE(), 1, 1),
+(2, 'Fashion World', '最流行的時尚服飾店，讓你成為街頭最亮眼的存在。', GETDATE(), 1, 1),
+(3, '舒適家居館', '舒適的居家生活用品，讓你在家也能享受度假感覺。', GETDATE(), 1, 1),
+(4, '綠意花園', '提供新鮮的植物和花卉，裝點你的家，讓生活更有生氣。', GETDATE(), 1, 1),
+(5, 'Tech Gadget Store', '最新科技產品，讓你領先潮流。', GETDATE(), 1, 1),
+(1, '手工藝品專賣店', '每一個手工藝品都充滿藝術氣息，為您的家增添獨特風格。', GETDATE(), 1, 1),
+(2, '運動用品專賣店', '提供各式運動用品，讓你輕鬆開啟運動生活。', GETDATE(), 1, 1),
+(3, '美妝與保養', '專業的美容與保養產品，讓你的肌膚永遠年輕光滑。', GETDATE(), 1, 1),
+(4, '電玩世界', '遊戲愛好者的天堂，讓你享受無限的遊戲樂趣。', GETDATE(), 1, 1),
+(5, '寵物用品店', '為你的寵物挑選最合適的用品，讓牠們的生活更幸福。', GETDATE(), 1, 1);
+
+
+
+/****** activity ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Best_Sell_Rankings](
+	[best_sell_rankings_id] [int] IDENTITY(1,1) NOT NULL,
+	[product_id] [int] NOT NULL,
+	[number_count] [int] NOT NULL,
+	[bsr_discount] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[best_sell_rankings_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Best_Sell_Tracking]    Script Date: 2025/3/4 下午 09:58:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Best_Sell_Tracking](
+	[best_sell_tracking_id] [int] IDENTITY(1,1) NOT NULL,
+	[product_id] [int] NOT NULL,
+	[love_count] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[best_sell_tracking_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[buy_one_get_one]    Script Date: 2025/3/4 下午 09:58:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[buy_one_get_one](
+	[bogo_id] [int] IDENTITY(1,1) NOT NULL,
+	[order_id] [int] NOT NULL,
+	[users_id] [int] NOT NULL,
+	[product_id] [int] NOT NULL,
+	[quantity] [int] NULL,
+	[bogo_condition] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[bogo_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Coupon]    Script Date: 2025/3/4 下午 09:58:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Coupon](
+	[coupon_id] [int] IDENTITY(1,1) NOT NULL,
+	[users_id] [int] NOT NULL,
+	[coupon_discount] [int] NOT NULL,
+	[coupon_date_timeout] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[coupon_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[discount]    Script Date: 2025/3/4 下午 09:58:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[discount](
+	[discount_id] [int] IDENTITY(1,1) NOT NULL,
+	[product_id] [int] NOT NULL,
+	[date_time] [datetime] NOT NULL,
+	[discount_percent] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[discount_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Limited_time_sale]    Script Date: 2025/3/4 下午 09:58:47 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Limited_time_sale](
+	[limited_time_sale_id] [int] IDENTITY(1,1) NOT NULL,
+	[limited_time_start] [datetime] NOT NULL,
+	[limited_time_end] [datetime] NOT NULL,
+	[limited_time_list_id] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[limited_time_sale_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+SET IDENTITY_INSERT [dbo].[Best_Sell_Rankings] ON 
+
+INSERT [dbo].[Best_Sell_Rankings] ([best_sell_rankings_id], [product_id], [number_count], [bsr_discount]) VALUES (1, 23, 14, 250)
+INSERT [dbo].[Best_Sell_Rankings] ([best_sell_rankings_id], [product_id], [number_count], [bsr_discount]) VALUES (2, 11, 90, 199)
+SET IDENTITY_INSERT [dbo].[Best_Sell_Rankings] OFF
+GO
+SET IDENTITY_INSERT [dbo].[Best_Sell_Tracking] ON 
+
+INSERT [dbo].[Best_Sell_Tracking] ([best_sell_tracking_id], [product_id], [love_count]) VALUES (1, 11, 1000)
+SET IDENTITY_INSERT [dbo].[Best_Sell_Tracking] OFF
+GO
+SET IDENTITY_INSERT [dbo].[buy_one_get_one] ON 
+
+INSERT [dbo].[buy_one_get_one] ([bogo_id], [order_id], [users_id], [product_id], [quantity], [bogo_condition]) VALUES (1, 21, 1, 11, 20, 0)
+SET IDENTITY_INSERT [dbo].[buy_one_get_one] OFF
+GO
+SET IDENTITY_INSERT [dbo].[Coupon] ON 
+
+INSERT [dbo].[Coupon] ([coupon_id], [users_id], [coupon_discount], [coupon_date_timeout]) VALUES (2, 101, 60, CAST(N'2025-03-31T23:59:59.000' AS DateTime))
+INSERT [dbo].[Coupon] ([coupon_id], [users_id], [coupon_discount], [coupon_date_timeout]) VALUES (3, 102, 60, CAST(N'2025-04-30T23:59:59.000' AS DateTime))
+SET IDENTITY_INSERT [dbo].[Coupon] OFF
+GO
+SET IDENTITY_INSERT [dbo].[discount] ON 
+
+INSERT [dbo].[discount] ([discount_id], [product_id], [date_time], [discount_percent]) VALUES (1, 101, CAST(N'2025-03-01T10:00:00.000' AS DateTime), 75)
+INSERT [dbo].[discount] ([discount_id], [product_id], [date_time], [discount_percent]) VALUES (2, 102, CAST(N'2025-04-01T08:30:00.000' AS DateTime), 80)
+SET IDENTITY_INSERT [dbo].[discount] OFF
+GO
+SET IDENTITY_INSERT [dbo].[Limited_time_sale] ON 
+
+INSERT [dbo].[Limited_time_sale] ([limited_time_sale_id], [limited_time_start], [limited_time_end], [limited_time_list_id]) VALUES (1, CAST(N'2025-03-01T10:00:00.000' AS DateTime), CAST(N'2025-04-01T08:30:00.000' AS DateTime), 1)
+INSERT [dbo].[Limited_time_sale] ([limited_time_sale_id], [limited_time_start], [limited_time_end], [limited_time_list_id]) VALUES (2, CAST(N'2025-03-01T10:00:00.000' AS DateTime), CAST(N'2025-04-15T08:30:00.000' AS DateTime), 2)
+SET IDENTITY_INSERT [dbo].[Limited_time_sale] OFF
+GO
